@@ -20,66 +20,53 @@ import com.typesafe.config.{ Config, ConfigFactory }
 import scala.util.{ Try, Success, Failure }
 
 /**
- * Application settings. First attempts to acquire from the deploy environment.
- * If not exists, then from -D java system properties, else a default config.
+ * 1. Default configuration values come from "reference.conf".
  *
- * Settings in the environment such as: SPARK_HA_MASTER=local[10] is picked up first.
+ * 2. The second source of configuration values comes from Environment Vairables.
+ * These require entries in the reference.conf file (e.g. seednodes = ${?CASSANDRA_SEED_NODES}
  *
- * Settings from the command line in -D will override settings in the deploy environment.
- * For example: sbt -Dspark.master="local[12]" run
+ * 3. The third source of configuration values comes from java run command through the use of
+ * the -D tag (e.g. -DCASSANDRA_SEED_NODES=5.6.7.8)
  *
- * If you have not yet used Typesafe Config before, you can pass in overrides like so:
+ * The order of precedence is:
+ * 1. -D (if java -cp . . . -D. . . is used then this takes priority over
+ * reference.conf and Environment Variables).
  *
- * {{{
- *   new Settings(ConfigFactory.parseString("""
- *      spark.master = "some.ip"
- *   """))
- * }}}
+ * 2. Environment Variables (if Environment Variables are set then they take priority over
+ * reference.conf values).
  *
- * Any of these can also be overriden by your own application.conf.
+ * 3. reference.conf (reference.conf values are used when Environment Variables are not present
+ * and -D was not used.)
  *
- * @param conf Optional config for test
+ *
+ * Standard behavior - the following are loaded with first-listed as higher priority:
+ *
+ * system properties
+ * application.conf (all resources on classpath with this name)
+ * application.json (all resources on classpath with this name)
+ * application.properties (all resources on classpath with this name)
+ * reference.conf (all resources on classpath with this name)
+ *
+ *
+ * [For Debug - Set the Java system property -Dconfig.trace=loads to get output on stderr describing
+ * each file that is loaded.]
+ *
  */
-
 protected class AppConfig(rootConfig: Config) {
   def getString(key: String): String = rootConfig.getString(key)
 }
 
-//final class AppConfig(conf: Option[Config] = None) extends Serializable {
 trait HasAppConfig extends Serializable {
 
-  val localAddress = InetAddress.getLocalHost.getHostAddress
-
-  //  val rootConfig = conf match {
-  //    case Some(c) => c.withFallback(ConfigFactory.load)
-  //    case _ => ConfigFactory.load
-  //  }
   val rootConfig = ConfigFactory.load
 
-  //TODO - Document me. Returns the value obtained in the following order of precedence: environment variable, java system property, config file, specified default value
-  /** Attempts to acquire from environment, then java system properties. */
-  def getRequiredValue(envVarName: String, config: (Config, String), defaultValue: String): String = {
-    val (configRoot, configName) = config
-    val envVar = Try(sys.env(envVarName))
-    envVar match {
-      case Success(v) => v
-      case Failure(_) => getRequiredValue(config, defaultValue)
-    }
+  def getRequiredValue(config: Config, name: String): String = {
+    config.getString(name)
   }
 
-  def getRequiredValue(config: (Config, String), defaultValue: String): String = {
-    val (configRoot, configName) = config
-    Try(configRoot.getString(configName)) getOrElse defaultValue
-  }
+  def listConfig = rootConfig.root().render()
 
-  def getRequiredValue(envVarName: String, config: (Config, String), defaultValue: Int): Int = {
-    val (configRoot, configName) = config
-    val envVar = Try(sys.env(envVarName).toInt)
-    envVar match {
-      case Success(v) => v
-      case Failure(_) => Try(configRoot.getInt(configName)) getOrElse defaultValue
-    }
-  }
+  protected def listConfig(configName: String, config: Config) = "\"" + configName + "\": " + config.root().render()
 
   import akka.util.Timeout
   import scala.concurrent.duration._

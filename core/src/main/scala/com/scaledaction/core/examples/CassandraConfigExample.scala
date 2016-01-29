@@ -8,6 +8,10 @@ object CassandraConfigExample extends HasCassandraConfig {
 
     val cassandraConfig = getCassandraConfig
 
-    println(s"cassandraConfig: ${cassandraConfig.keyspace}")
+    println(s"seednodes: ${cassandraConfig.seednodes}")
+    println(s"keyspace: ${cassandraConfig.keyspace}")
+
+    println
+    println(listCassandraConfig)
   }
 }

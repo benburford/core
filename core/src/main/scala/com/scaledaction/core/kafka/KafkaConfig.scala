@@ -21,30 +21,8 @@ import java.util.Properties
 import org.apache.kafka.clients.producer.ProducerConfig
 import scala.util.Try
 
-/**
- * Application settings. First attempts to acquire from the deploy environment.
- * If not exists, then from -D java system properties, else a default config.
- *
- * Settings in the environment such as: SPARK_HA_MASTER=local[10] is picked up first.
- *
- * Settings from the command line in -D will override settings in the deploy environment.
- * For example: sbt -Dspark.master="local[12]" run
- *
- * If you have not yet used Typesafe Config before, you can pass in overrides like so:
- *
- * {{{
- *   new Settings(ConfigFactory.parseString("""
- *      spark.master = "some.ip"
- *   """))
- * }}}
- *
- * Any of these can also be overridden by your own application.conf.
- *
- * @param conf Optional config for test
- */
-// brokers is a comma-separated list
 class KafkaConfig(
-  val brokers: String,
+  val brokers: String, // brokers is a comma-separated list
   val topic: String,
   val keySerializer: String,
   val valueSerializer: String,
@@ -67,20 +45,24 @@ class KafkaConfig(
 
 trait HasKafkaConfig extends HasAppConfig {
 
-  def getKafkaConfig: KafkaConfig = getKafkaConfig(rootConfig.getConfig("kafka"))
+  private val CONFIG_NAME = "kafka"
+
+  def getKafkaConfig: KafkaConfig = getKafkaConfig(rootConfig.getConfig("CONFIG_NAME"))
 
   def getKafkaConfig(rootName: String): KafkaConfig = getKafkaConfig(rootConfig.getConfig(rootName))
 
   private def getKafkaConfig(kafka: Config): KafkaConfig = {
 
-    val brokers = getRequiredValue("KAFKA_BROKERS", (kafka, "brokers"), "127.0.0.1:9092")
+    val brokers = getRequiredValue(kafka, "brokers")
 
-    val topic = getRequiredValue("KAFKA_TOPIC", (kafka, "topic"), "killrweather.raw")
+    val topic = getRequiredValue(kafka, "topic")
 
-    val keySerializer = getRequiredValue((kafka, "key_serializer"), "org.apache.kafka.common.serialization.StringSerializer")
+    val keySerializer = getRequiredValue(kafka, "key_serializer")
 
-    val valueSerializer = getRequiredValue((kafka, "value_serializer"), "org.apache.kafka.common.serialization.StringSerializer")
+    val valueSerializer = getRequiredValue(kafka, "value_serializer")
 
     new KafkaConfig(brokers, topic, keySerializer, valueSerializer, kafka)
   }
+
+  def listKafkaConfig = listConfig(CONFIG_NAME, rootConfig.getConfig(CONFIG_NAME))
 }

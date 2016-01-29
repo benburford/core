@@ -18,32 +18,11 @@ package com.scaledaction.core.spark
 import scala.util.Try
 import com.typesafe.config.Config
 import java.util.Properties
-import org.apache.kafka.clients.producer.ProducerConfig           //Ben:  kafka or spark???
+import org.apache.kafka.clients.producer.ProducerConfig //Ben:  kafka or spark???
 import com.scaledaction.core.config.{ AppConfig, HasAppConfig }
 
-/**
- * Application settings. First attempts to acquire from the deploy environment.
- * If not exists, then from -D java system properties, else a default config.
- *
- * Settings in the environment such as: SPARK_HA_MASTER=local[10] is picked up first.
- *
- * Settings from the command line in -D will override settings in the deploy environment.
- * For example: sbt -Dspark.master="local[12]" run
- *
- * If you have not yet used Typesafe Config before, you can pass in overrides like so:
- *
- * {{{
- *   new Settings(ConfigFactory.parseString("""
- *      spark.master = "some.ip"
- *   """))
- * }}}
- *
- * Any of these can also be overridden by your own application.conf.
- *
- * @param conf Optional config for test
- */
 class SparkConfig(
-  val master: String,  
+  val master: String,
   rootConfig: Config) extends AppConfig(rootConfig: Config) {
 
   override def toString(): String = s"master: ${master}"
@@ -51,14 +30,18 @@ class SparkConfig(
 
 trait HasSparkConfig extends HasAppConfig {
 
-  def getSparkConfig: SparkConfig = getSparkConfig(rootConfig.getConfig("spark"))
+  private val CONFIG_NAME = "spark"
+
+  def getSparkConfig: SparkConfig = getSparkConfig(rootConfig.getConfig("CONFIG_NAME"))
 
   def getSparkConfig(rootName: String): SparkConfig = getSparkConfig(rootConfig.getConfig(rootName))
-  
+
   private def getSparkConfig(spark: Config): SparkConfig = {
-    
-    val master = getRequiredValue("SPARK_MASTER", (spark, "master"), "local[2]")
+
+    val master = getRequiredValue(spark, "master")
 
     new SparkConfig(master, spark)
   }
+
+  def listSparkConfig = listConfig(CONFIG_NAME, rootConfig.getConfig(CONFIG_NAME))
 }

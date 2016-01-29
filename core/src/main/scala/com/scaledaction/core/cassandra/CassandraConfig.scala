@@ -21,28 +21,6 @@ import java.util.Properties
 import org.apache.kafka.clients.producer.ProducerConfig
 import com.scaledaction.core.config.{ AppConfig, HasAppConfig }
 
-/**
- * Application settings. First attempts to acquire from the linux environment variables.
- * If not exists, then from -D java system properties, else a default config file.
- *
- * Settings in the environment such as: SPARK_HA_MASTER=local[10] is picked up first.
- *
- * Settings from the command line in -D will override settings in the deploy environment.
- * For example: sbt -Dspark.master="local[12]" run
- *
- * If you have not yet used Typesafe Config before, you can pass in overrides like so:
- *
- * {{{
- *   new Settings(ConfigFactory.parseString("""
- *      spark.master = "some.ip"
- *   """))
- * }}}
- *
- * Any of these can also be overridden by your own application.conf.
- *
- * @param conf Optional config for test
- */
-// brokers is a comma-separated list
 class CassandraConfig(
   val seednodes: String,
   val keyspace: String,
@@ -53,16 +31,20 @@ class CassandraConfig(
 
 trait HasCassandraConfig extends HasAppConfig {
 
-  def getCassandraConfig: CassandraConfig = getCassandraConfig(rootConfig.getConfig("cassandra"))
+  private val CONFIG_NAME = "cassandra"
+
+  def getCassandraConfig: CassandraConfig = getCassandraConfig(rootConfig.getConfig(CONFIG_NAME))
 
   def getCassandraConfig(rootName: String): CassandraConfig = getCassandraConfig(rootConfig.getConfig(rootName))
-  
+
   private def getCassandraConfig(cassandra: Config): CassandraConfig = {
 
-    val seednodes = getRequiredValue("CASSANDRA_SEED_NODES", (cassandra, "seednodes"), localAddress)
+    val seednodes = getRequiredValue(cassandra, "seednodes")
 
-    val keyspace = getRequiredValue("CASSANDRA_KEYSPACE", (cassandra, "keyspace"), "isd_weather_data")
+    val keyspace = getRequiredValue(cassandra, "keyspace")
 
     new CassandraConfig(seednodes, keyspace, cassandra)
   }
+
+  def listCassandraConfig = listConfig(CONFIG_NAME, rootConfig.getConfig(CONFIG_NAME))
 }
