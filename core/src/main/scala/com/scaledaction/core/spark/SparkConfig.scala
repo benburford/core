@@ -18,8 +18,9 @@ package com.scaledaction.core.spark
 import scala.util.Try
 import com.typesafe.config.Config
 import java.util.Properties
-import org.apache.kafka.clients.producer.ProducerConfig //Ben:  kafka or spark???
+import org.apache.kafka.clients.producer.ProducerConfig
 import com.scaledaction.core.config.{ AppConfig, HasAppConfig }
+import com.scaledaction.core.config.CoreConfig
 
 class SparkConfig(
   val master: String,
@@ -32,16 +33,16 @@ trait HasSparkConfig extends HasAppConfig {
 
   private val CONFIG_NAME = "spark"
 
-  def getSparkConfig: SparkConfig = getSparkConfig(rootConfig.getConfig("CONFIG_NAME"))
+  def getSparkConfig: SparkConfig = getSparkConfig(getConfig(CONFIG_NAME))
 
-  def getSparkConfig(rootName: String): SparkConfig = getSparkConfig(rootConfig.getConfig(rootName))
+  def getSparkConfig(rootName: String): SparkConfig = getSparkConfig(getConfig(rootName))
 
-  private def getSparkConfig(spark: Config): SparkConfig = {
+  private def getSparkConfig(spark: CoreConfig): SparkConfig = {
 
     val master = getRequiredValue(spark, "master")
 
-    new SparkConfig(master, spark)
+    new SparkConfig(master, spark.config)
   }
 
-  def listSparkConfig = listConfig(CONFIG_NAME, rootConfig.getConfig(CONFIG_NAME))
+  def listSparkConfig = listConfig(getConfig(CONFIG_NAME))
 }

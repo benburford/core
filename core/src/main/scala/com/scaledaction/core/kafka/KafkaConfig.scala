@@ -20,6 +20,7 @@ import com.typesafe.config.Config
 import java.util.Properties
 import org.apache.kafka.clients.producer.ProducerConfig
 import scala.util.Try
+import com.scaledaction.core.config.CoreConfig
 
 class KafkaConfig(
   val brokers: String, // brokers is a comma-separated list
@@ -47,11 +48,11 @@ trait HasKafkaConfig extends HasAppConfig {
 
   private val CONFIG_NAME = "kafka"
 
-  def getKafkaConfig: KafkaConfig = getKafkaConfig(rootConfig.getConfig("CONFIG_NAME"))
+  def getKafkaConfig: KafkaConfig = getKafkaConfig(getConfig(CONFIG_NAME))
 
-  def getKafkaConfig(rootName: String): KafkaConfig = getKafkaConfig(rootConfig.getConfig(rootName))
+  def getKafkaConfig(rootName: String): KafkaConfig = getKafkaConfig(getConfig(rootName))
 
-  private def getKafkaConfig(kafka: Config): KafkaConfig = {
+  private def getKafkaConfig(kafka: CoreConfig): KafkaConfig = {
 
     val brokers = getRequiredValue(kafka, "brokers")
 
@@ -61,8 +62,8 @@ trait HasKafkaConfig extends HasAppConfig {
 
     val valueSerializer = getRequiredValue(kafka, "value_serializer")
 
-    new KafkaConfig(brokers, topic, keySerializer, valueSerializer, kafka)
+    new KafkaConfig(brokers, topic, keySerializer, valueSerializer, kafka.config)
   }
 
-  def listKafkaConfig = listConfig(CONFIG_NAME, rootConfig.getConfig(CONFIG_NAME))
+  def listKafkaConfig = listConfig(getConfig(CONFIG_NAME))
 }

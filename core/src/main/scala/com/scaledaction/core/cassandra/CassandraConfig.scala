@@ -20,6 +20,7 @@ import com.typesafe.config.Config
 import java.util.Properties
 import org.apache.kafka.clients.producer.ProducerConfig
 import com.scaledaction.core.config.{ AppConfig, HasAppConfig }
+import com.scaledaction.core.config.CoreConfig
 
 class CassandraConfig(
   val seednodes: String,
@@ -33,18 +34,18 @@ trait HasCassandraConfig extends HasAppConfig {
 
   private val CONFIG_NAME = "cassandra"
 
-  def getCassandraConfig: CassandraConfig = getCassandraConfig(rootConfig.getConfig(CONFIG_NAME))
+  def getCassandraConfig: CassandraConfig = getCassandraConfig(getConfig(CONFIG_NAME))
 
-  def getCassandraConfig(rootName: String): CassandraConfig = getCassandraConfig(rootConfig.getConfig(rootName))
+  def getCassandraConfig(rootName: String): CassandraConfig = getCassandraConfig(getConfig(rootName))
 
-  private def getCassandraConfig(cassandra: Config): CassandraConfig = {
+  private def getCassandraConfig(cassandra: CoreConfig): CassandraConfig = {
 
     val seednodes = getRequiredValue(cassandra, "seednodes")
 
     val keyspace = getRequiredValue(cassandra, "keyspace")
 
-    new CassandraConfig(seednodes, keyspace, cassandra)
+    new CassandraConfig(seednodes, keyspace, cassandra.config)
   }
 
-  def listCassandraConfig = listConfig(CONFIG_NAME, rootConfig.getConfig(CONFIG_NAME))
+  def listCassandraConfig = listConfig(getConfig(CONFIG_NAME))
 }

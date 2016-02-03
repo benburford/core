@@ -56,17 +56,26 @@ protected class AppConfig(rootConfig: Config) {
   def getString(key: String): String = rootConfig.getString(key)
 }
 
+case class MissingRequiredConfigurationValueException(message: String) extends Exception(message)
+
+case class CoreConfig(configName: String, config: Config)
+
 trait HasAppConfig extends Serializable {
 
   val rootConfig = ConfigFactory.load
 
-  def getRequiredValue(config: Config, name: String): String = {
-    config.getString(name)
+  protected def getConfig(configName: String) =
+    CoreConfig(configName, rootConfig.getConfig(configName))
+
+  def getRequiredValue(config: CoreConfig, name: String): String = {
+    val value = config.config.getString(name)
+    if (value.isEmpty()) throw new MissingRequiredConfigurationValueException(s"missing required configuration value for key: ${config.configName}.$name")
+    value
   }
 
   def listConfig = rootConfig.root().render()
 
-  protected def listConfig(configName: String, config: Config) = "\"" + configName + "\": " + config.root().render()
+  protected def listConfig(config: CoreConfig) = "\"" + config.configName + "\": " + config.config.root().render()
 
   import akka.util.Timeout
   import scala.concurrent.duration._

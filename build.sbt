@@ -30,7 +30,8 @@ lazy val coreDeps = Seq(
   "org.specs2"             %% "specs2"                % "2.2.2"        % "test",
   "io.spray"               %% "spray-testkit"         % sprayVersion   % "test",
   "com.typesafe.akka"      %% "akka-testkit"          % akkaVersion    % "test",
-  "org.apache.kafka"       % "kafka_2.10"             % kafkaVersion
+  "org.apache.kafka"       % "kafka_2.10"             % kafkaVersion,
+  "org.scalatest"          % "scalatest_2.10"         % "2.2.6"        % "test"
   exclude("javax.jms", "jms")
   exclude("com.sun.jdmk", "jmxtools")
   exclude("com.sun.jmx", "jmxri")
